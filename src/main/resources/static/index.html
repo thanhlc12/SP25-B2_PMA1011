@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý nhân viên</title>
+  <style>
+    table {width: 100%; border-collapse: collapse;}
+    th, td {border: 1px solid #111; padding: 10px; text-align: left;}
+    th {background-color: aliceblue;}
+  </style>
+</head>
+<body>
+<h2>Quản lý nhân viên</h2>
+<form id="nhanVienForm">
+  <input type="hidden" id="id">
+  <input type="text" id="ma" placeholder="Mã nhân viên" required> <br><br>
+  <input type="text" id="ten" placeholder="Tên nhân viên" required> <br><br>
+  <label>
+    <input type="radio" name="gioiTinh" value="Nam" id="gioiTinhNam"> Nam
+    <input type="radio" name="gioiTinh" value="Nữ" id="gioiTinhNu"> Nữ
+  </label> <br><br>
+  <input type="text" id="soDienThoai" placeholder="Số điện thoại" required> <br><br>
+  <input type="text" id="diaChi" placeholder="Địa chỉ"> <br><br>
+  <input type="email" id="email" placeholder="Email"> <br><br>
+  <button type="submit">Lưu</button>
+</form>
+
+<table>
+  <thead>
+  <tr>
+    <th>ID</th>
+    <th>Mã nhân viên</th>
+    <th>Tên nhân viên</th>
+    <th>Giới tính</th>
+    <th>Số điện thoại</th>
+    <th>Địa chỉ</th>
+    <th>Email</th>
+    <th>Hành động</th>
+  </tr>
+  </thead>
+  <tbody id="nhanVienTable"></tbody>
+</table>
+
+<script>
+  const API_BASE = 'http://localhost:8080/api/nhanVien';
+
+  async function fetchNhanVien() {
+    const response = await fetch(API_BASE);
+    const nhanVien = await response.json();
+    document.getElementById('nhanVienTable').innerHTML = nhanVien.map(nv => `
+      <tr>
+        <td>${nv.id}</td>
+        <td>${nv.maNhanVien}</td>
+        <td>${nv.tenNhanVien}</td>
+        <td>${nv.gioiTinh || 'N/A'}</td>
+        <td>${nv.soDienThoai}</td>
+        <td>${nv.diaChi || 'N/A'}</td>
+        <td>${nv.email || 'N/A'}</td>
+        <td>
+          <button onclick="editNhanVien(${nv.id}, '${nv.maNhanVien}', '${nv.tenNhanVien}', '${nv.gioiTinh}', '${nv.soDienThoai}', '${nv.diaChi}', '${nv.email}')">Edit</button>
+          <button onclick="deleteNhanVien(${nv.id})">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function editNhanVien(id, ma, ten, gioiTinh, soDienThoai, diaChi, email) {
+    document.getElementById('id').value = id;
+    document.getElementById('ma').value = ma;
+    document.getElementById('ten').value = ten;
+
+    if (gioiTinh === "Nam") {
+      document.getElementById('gioiTinhNam').checked = true;
+    } else if (gioiTinh === "Nữ") {
+      document.getElementById('gioiTinhNu').checked = true;
+    }
+
+    document.getElementById('soDienThoai').value = soDienThoai;
+    document.getElementById('diaChi').value = diaChi || '';
+    document.getElementById('email').value = email || '';
+  }
+
+  async function deleteNhanVien(id) {
+    if (confirm('Bạn có chắc chắn muốn xóa không?')) {
+      await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+      alert('Xóa thành công!');
+      fetchNhanVien();
+    }
+  }
+
+  async function saveNhanVien(event) {
+    event.preventDefault();
+    const id = document.getElementById('id').value.trim();
+    const gioiTinh = document.querySelector('input[name="gioiTinh"]:checked')?.value || '';
+
+    const nhanVien = {
+      id: id ? parseInt(id) : null,
+      maNhanVien: document.getElementById('ma').value.trim(),
+      tenNhanVien: document.getElementById('ten').value.trim(),
+      gioiTinh: gioiTinh,
+      soDienThoai: document.getElementById('soDienThoai').value.trim(),
+      diaChi: document.getElementById('diaChi').value.trim(),
+      email: document.getElementById('email').value.trim()
+    };
+
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `${API_BASE}/${id}` : API_BASE;
+
+    await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nhanVien)
+    });
+
+    alert(id ? 'Cập nhật thành công!' : 'Thêm mới thành công!');
+    document.getElementById('nhanVienForm').reset();
+    fetchNhanVien();
+  }
+
+  document.getElementById('nhanVienForm').addEventListener('submit', saveNhanVien);
+  fetchNhanVien();
+</script>
+</body>
+</html>
