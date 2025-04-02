@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý khách hàng</title>
+  <style>
+    table {width: 100%; border-collapse: collapse;}
+    th, td {border: 1px solid #111; padding: 10px; text-align: left;}
+    th {background-color: aliceblue;}
+  </style>
+</head>
+<body>
+<h2>Quản lý khách hàng</h2>
+<form id="khachHangForm">
+  <input type="hidden" id="id">
+  <input type="text" id="ma" placeholder="Mã khách hàng" required> <br><br>
+  <input type="text" id="ten" placeholder="Tên khách hàng" required> <br><br>
+  <label>
+    <input type="radio" name="gioiTinh" value="Nam" id="gioiTinhNam"> Nam
+    <input type="radio" name="gioiTinh" value="Nữ" id="gioiTinhNu"> Nữ
+  </label> <br><br>
+  <input type="text" id="soDienThoai" placeholder="Số điện thoại" required> <br><br>
+  <input type="text" id="diaChi" placeholder="Địa chỉ"> <br><br>
+  <input type="email" id="email" placeholder="Email"> <br><br>
+  <button type="submit">Lưu</button>
+</form>
+
+<table>
+  <thead>
+  <tr>
+    <th>ID</th>
+    <th>Mã khách hàng</th>
+    <th>Tên khách hàng</th>
+    <th>Giới tính</th>
+    <th>Số điện thoại</th>
+    <th>Địa chỉ</th>
+    <th>Email</th>
+    <th>Hành động</th>
+  </tr>
+  </thead>
+  <tbody id="khachHangTable"></tbody>
+</table>
+
+<script>
+  const API_BASE = 'http://localhost:8080/api/khachHang';
+
+  async function fetchKhachHang() {
+    const response = await fetch(API_BASE);
+    const khachHang = await response.json();
+    document.getElementById('khachHangTable').innerHTML = khachHang.map(kh => `
+      <tr>
+        <td>${kh.id}</td>
+        <td>${kh.maKhachHang}</td>
+        <td>${kh.tenKhachHang}</td>
+        <td>${kh.gioiTinh || 'N/A'}</td>
+        <td>${kh.soDienThoai}</td>
+        <td>${kh.diaChi || 'N/A'}</td>
+        <td>${kh.email || 'N/A'}</td>
+        <td>
+          <button onclick="editKhachHang(${kh.id}, '${kh.maKhachHang}', '${kh.tenKhachHang}', '${kh.gioiTinh}', '${kh.soDienThoai}', '${kh.diaChi}', '${kh.email}')">Edit</button>
+          <button onclick="deleteKhachHang(${kh.id})">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function editKhachHang(id, ma, ten, gioiTinh, soDienThoai, diaChi, email) {
+    document.getElementById('id').value = id;
+    document.getElementById('ma').value = ma;
+    document.getElementById('ten').value = ten;
+
+    if (gioiTinh === "Nam") {
+      document.getElementById('gioiTinhNam').checked = true;
+    } else if (gioiTinh === "Nữ") {
+      document.getElementById('gioiTinhNu').checked = true;
+    }
+
+    document.getElementById('soDienThoai').value = soDienThoai;
+    document.getElementById('diaChi').value = diaChi || '';
+    document.getElementById('email').value = email || '';
+  }
+
+  async function deleteKhachHang(id) {
+    if (confirm('Bạn có chắc chắn muốn xóa không?')) {
+      await fetch(`${API_BASE}/${id}`, { method: 'DELETE' });
+      alert('Xóa thành công!');
+      fetchKhachHang();
+    }
+  }
+
+  async function saveKhachHang(event) {
+    event.preventDefault();
+    const id = document.getElementById('id').value.trim();
+    const gioiTinh = document.querySelector('input[name="gioiTinh"]:checked')?.value || '';
+
+    const khachHang = {
+      id: id ? parseInt(id) : null,
+      maKhachHang: document.getElementById('ma').value.trim(),
+      tenKhachHang: document.getElementById('ten').value.trim(),
+      gioiTinh: gioiTinh,
+      soDienThoai: document.getElementById('soDienThoai').value.trim(),
+      diaChi: document.getElementById('diaChi').value.trim(),
+      email: document.getElementById('email').value.trim()
+    };
+
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `${API_BASE}/${id}` : API_BASE;
+
+    await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(khachHang)
+    });
+
+    alert(id ? 'Cập nhật thành công!' : 'Thêm mới thành công!');
+    document.getElementById('khachHangForm').reset();
+    fetchKhachHang();
+  }
+
+  document.getElementById('khachHangForm').addEventListener('submit', saveKhachHang);
+  fetchKhachHang();
+</script>
+</body>
+</html>
+
